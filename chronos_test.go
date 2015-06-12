@@ -48,9 +48,8 @@ func TestRunWithJobsInOrder(t *testing.T) {
 	go chronos.Run(pushChan, workerChan, stopChan)
 	pushChan <- firstEntry
 	pushChan <- secondEntry
-	// Lets the goroutine starts then updates the position
-	time.Sleep(5)
-	provider.Update(newPosition)
+	// Updates the position
+	go provider.Update(newPosition)
 
 	// Assert
 	firstElement := <-workerChan
@@ -84,9 +83,8 @@ func TestRunWithJobsInReverseOrder(t *testing.T) {
 	go chronos.Run(pushChan, workerChan, stopChan)
 	pushChan <- firstEntry
 	pushChan <- secondEntry
-	// Lets the goroutine starts then updates the position
-	time.Sleep(5)
-	provider.Update(newPosition)
+	// Updates the position
+	go provider.Update(newPosition)
 
 	// Assert
 	firstElement := <-workerChan
