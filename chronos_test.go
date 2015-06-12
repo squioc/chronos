@@ -114,12 +114,12 @@ func TestRunWithStop(t *testing.T) {
 	// go routine to check that we leave the Run method when we send a booleen on stopChan
 	go func(exitChan chan bool) {
 		chronos.Run(pushChan, workerChan, stopChan)
-		// Send boolean on the channel when the Run method exits
+		// sends boolean on the channel when the Run method exits
 		exitChan <- true
 	}(exitChan)
-	// Stops the goroutine
+	// stops the goroutine
 	stopChan <- true
-	// Sends an entry to the goroutine
+	// sends an entry to the goroutine
 	pushChan <- firstEntry
 
 	// Assert
@@ -163,14 +163,14 @@ func TestRunWithJobsIn2Sets(t *testing.T) {
 
 	// Act
 	go chronos.Run(pushChan, workerChan, stopChan)
-	// push the first set (firstEntry, secondEntry
+	// pushes the first set (firstEntry, secondEntry
 	pushChan <- firstEntry
 	pushChan <- secondEntry
-	// Lets the goroutine starts then updates the position
+	// lets the goroutine starts then updates the position
 	time.Sleep(5 * time.Millisecond)
 	provider.Update(intermediatePosition)
 	time.Sleep(5 * time.Millisecond)
-	// push the second set (thridEntry)
+	// pushes the second set (thridEntry)
 	pushChan <- thirdEntry
 	time.Sleep(5 * time.Millisecond)
 	provider.Update(terminalPosition)
@@ -202,7 +202,7 @@ func TestRunWithJobInPast(t *testing.T) {
 
 	// Act
 	go chronos.Run(pushChan, workerChan, stopChan)
-	// push the item
+	// pushes the item
 	pushChan <- firstEntry
 
 	// Assert

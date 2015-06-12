@@ -28,22 +28,22 @@ func (c *Chronos) Run(pushChan, workerChan chan Entry, stopChan chan bool) {
 		case entry := <-pushChan:
 			delay := c.delay(entry.Position())
 
-			// Send the element on the worker channel if the delay is negative
+			// Sends the element on the worker channel if the delay is negative
 			if delay <= 0 {
 				workerChan <- entry
 			} else {
-				// Push the element in the queue
+				// Pushes the element in the queue
 				heap.Push(c.queue, entry)
 
-				// Pop to the next delay in the queue
+				// Pops to the next delay in the queue
 				c.popUntilNextDelay(workerChan, loopChan)
 			}
 
 		case <-loopChan:
-			// Send the miminum element on the worker channel
+			// Sends the miminum element on the worker channel
 			workerChan <- heap.Pop(c.queue).(Entry)
 
-			// Pop to the next delay in the queue
+			// Pops to the next delay in the queue
 			c.popUntilNextDelay(workerChan, loopChan)
 
 		case <-stopChan:
@@ -75,7 +75,7 @@ func (c *Chronos) popUntilNextDelay(workerChan chan Entry, loopChan chan axis.Po
 			return
 		}
 	}
-	// No more items, clean the watcher
+	// No more items, cleans the watcher
 	if c.watcher != nil {
 		c.watcher.Stop()
 		c.watcher = nil
