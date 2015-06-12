@@ -137,6 +137,82 @@ func TestRunWithStop(t *testing.T) {
 	}
 }
 
+func TestRunWithJobsIn2Sets(t *testing.T) {
+	fmt.Println("Test Run with jobs in 2 sets")
+	// Arrange
+	position := axis.Position(0)
+	intermediatePosition := axis.Position(1500)
+	terminalPosition := axis.Position(3000)
+	provider := axis.NewFakeTime(position)
+	pq := new(PriorityQueue)
+	chronos := NewChronos(provider, pq)
+	pushChan := make(chan Entry, 2)
+	workerChan := make(chan Entry, 2)
+	stopChan := make(chan bool, 1)
+	firstEntry := &EntryTest{
+		position: axis.Position(500),
+		Element:  "First",
+	}
+	secondEntry := &EntryTest{
+		position: axis.Position(1000),
+		Element:  "Second",
+	}
+	thirdEntry := &EntryTest{
+		position: axis.Position(2000),
+		Element:  "Third",
+	}
+
+	// Act
+	go chronos.Run(pushChan, workerChan, stopChan)
+	// push the first set (firstEntry, secondEntry
+	pushChan <- firstEntry
+	pushChan <- secondEntry
+	// Lets the goroutine starts then updates the position
+	time.Sleep(5)
+	provider.Update(intermediatePosition)
+	time.Sleep(5)
+	// push the second set (thridEntry)
+	pushChan <- thirdEntry
+	provider.Update(terminalPosition)
+
+	// Assert
+	firstElement := <-workerChan
+	expect(t, *firstEntry, firstElement, stopChan)
+	secondElement := <-workerChan
+	expect(t, *secondEntry, secondElement, stopChan)
+	thirdElement := <-workerChan
+	expect(t, *thirdEntry, thirdElement, stopChan)
+	stopChan <- true
+}
+
+func TestRunWithJobInPast(t *testing.T) {
+	fmt.Println("Test Run with a job in a past position")
+	// Arrange
+	position := axis.Position(1000)
+	provider := axis.NewFakeTime(position)
+	pq := new(PriorityQueue)
+	chronos := NewChronos(provider, pq)
+	pushChan := make(chan Entry, 2)
+	workerChan := make(chan Entry, 2)
+	stopChan := make(chan bool, 1)
+	firstEntry := &EntryTest{
+		position: axis.Position(500),
+		Element:  "First",
+	}
+
+	// Act
+	go chronos.Run(pushChan, workerChan, stopChan)
+	// push the item
+	pushChan <- firstEntry
+	// Lets the goroutine starts then updates the position
+	time.Sleep(5)
+
+	// Assert
+	firstElement := <-workerChan
+	expect(t, *firstEntry, firstElement, stopChan)
+	stopChan <- true
+}
+
 /****************************************
 *                                       *
 *        Structs implementations        *
