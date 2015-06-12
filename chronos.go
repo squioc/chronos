@@ -35,37 +35,16 @@ func (c *Chronos) Run(pushChan, workerChan chan Entry, stopChan chan bool) {
 				// Push the element in the queue
 				heap.Push(c.queue, entry)
 
-				// If the watcher is undefined
-				if c.watcher == nil {
-					c.watcher = c.provider.AfterChan(delay, loopChan)
-				}
-
 				// Pop to the next delay in the queue
-				c.popUntilNextDelay(workerChan)
+				c.popUntilNextDelay(workerChan, loopChan)
 			}
 
 		case <-loopChan:
 			// Send the miminum element on the worker channel
 			workerChan <- heap.Pop(c.queue).(Entry)
 
-			// Send the following elements on the worker channel
-			// as long as the delay is negative
-			for c.queue.Len() > 0 {
-				firstEntry := c.queue.Peek()
-				delay := c.delay(firstEntry.(Entry).Position())
-				if delay <= 0 {
-					workerChan <- heap.Pop(c.queue).(Entry)
-				} else {
-					// Pause the shipment during the delay to elapse
-					// Reengage the watcher
-					if c.watcher == nil {
-						c.watcher = c.provider.AfterChan(delay, loopChan)
-					} else {
-						c.watcher.Reset(delay)
-					}
-					break
-				}
-			}
+			// Pop to the next delay in the queue
+			c.popUntilNextDelay(workerChan, loopChan)
 
 		case <-stopChan:
 			return
@@ -78,16 +57,27 @@ func (c *Chronos) delay(position axis.Position) axis.Distance {
 	return axis.Distance(position - c.provider.Current())
 }
 
-func (c *Chronos) popUntilNextDelay(workerChan chan Entry) {
+func (c *Chronos) popUntilNextDelay(workerChan chan Entry, loopChan chan axis.Position) {
 	for c.queue.Len() > 0 {
 		firstEntry := c.queue.Peek()
 
 		delay := c.delay(firstEntry.(Entry).Position())
 		if delay <= 0 {
+			// Sends immediately the item
 			workerChan <- heap.Pop(c.queue).(Entry)
 		} else {
-			c.watcher.Reset(delay)
+			// Pauses the scheduler until the delay elapsed
+			if c.watcher == nil {
+				c.watcher = c.provider.AfterChan(delay, loopChan)
+			} else {
+				c.watcher.Reset(delay)
+			}
 			return
 		}
+	}
+	// No more items, clean the watcher
+	if c.watcher != nil {
+		c.watcher.Stop()
+		c.watcher = nil
 	}
 }
