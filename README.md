@@ -28,4 +28,20 @@ Parameters:
  - `workerChan` is the output channel, which receives jobs whose the position was reached.
  - `stopChan` allow to stop gracefully the scheduler.
 
+### type Entry
+```go
+type Entry interface {
+	Position() axis.Position
+}
+```
+Entry is the interface that wraps elements to send in the scheduler
+
+### type Queue
+```go
+type Queue interface {
+	heap.Interface
+	Peek() interface{}
+}
+```
+Queue is the interface that holds elements as an ordered collection
 
