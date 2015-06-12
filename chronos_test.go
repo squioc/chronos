@@ -117,8 +117,7 @@ func TestRunWithStop(t *testing.T) {
 		// Send boolean on the channel when the Run method exits
 		exitChan <- true
 	}(exitChan)
-	// Lets the goroutine starts then stop the goroutine
-	time.Sleep(5)
+	// Stops the goroutine
 	stopChan <- true
 	// Sends an entry to the goroutine
 	pushChan <- firstEntry
@@ -168,11 +167,12 @@ func TestRunWithJobsIn2Sets(t *testing.T) {
 	pushChan <- firstEntry
 	pushChan <- secondEntry
 	// Lets the goroutine starts then updates the position
-	time.Sleep(5)
+	time.Sleep(5 * time.Millisecond)
 	provider.Update(intermediatePosition)
-	time.Sleep(5)
+	time.Sleep(5 * time.Millisecond)
 	// push the second set (thridEntry)
 	pushChan <- thirdEntry
+	time.Sleep(5 * time.Millisecond)
 	provider.Update(terminalPosition)
 
 	// Assert
@@ -204,8 +204,6 @@ func TestRunWithJobInPast(t *testing.T) {
 	go chronos.Run(pushChan, workerChan, stopChan)
 	// push the item
 	pushChan <- firstEntry
-	// Lets the goroutine starts then updates the position
-	time.Sleep(5)
 
 	// Assert
 	firstElement := <-workerChan
