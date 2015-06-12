@@ -35,7 +35,7 @@ func (c *Chronos) Run(pushChan, workerChan chan Entry, stopChan chan bool) {
 				// Push the element in the queue
 				heap.Push(c.queue, entry)
 
-				// If the watcher is undefined (first Item)
+				// If the watcher is undefined
 				if c.watcher == nil {
 					c.watcher = c.provider.AfterChan(delay, loopChan)
 				}
