@@ -29,7 +29,7 @@ func (c *Chronos) Run(pushChan, workerChan chan Entry, stopChan chan bool) {
 			delay := c.delay(entry.Position())
 
 			// Send the element on the worker channel if the delay is negative
-			if delay < 0 {
+			if delay <= 0 {
 				workerChan <- entry
 			} else {
 				// Push the element in the queue
