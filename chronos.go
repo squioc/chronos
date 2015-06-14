@@ -43,6 +43,9 @@ func (c *Chronos) Run(pushChan, workerChan chan Entry, stopChan chan bool) {
 			// Sends the miminum element on the worker channel
 			workerChan <- heap.Pop(c.queue).(Entry)
 
+			// Cleans the watcher (the watcher is obsolete)
+			c.watcher = nil
+
 			// Pops to the next delay in the queue
 			c.popUntilNextDelay(workerChan, loopChan)
 
