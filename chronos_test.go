@@ -13,12 +13,12 @@ import (
 *                                       *
 ****************************************/
 
-func expect(t *testing.T, expected EntryTest, actual Entry, stopChan chan bool) {
+func expect(t *testing.T, expected Item, actual Entry, stopChan chan bool) {
 	if actual == nil {
 		stopChan <- true
 		t.Fatalf("The actual element wasn't expected to be nil")
 	}
-	if actual.(*EntryTest).Element != expected.Element {
+	if actual.(*Item).Value != expected.Value {
 		stopChan <- true
 		t.Fatalf("The actual element wasn't the expected one")
 	}
@@ -35,13 +35,13 @@ func TestRunWithJobsInOrder(t *testing.T) {
 	pushChan := make(chan Entry, 2)
 	workerChan := make(chan Entry, 2)
 	stopChan := make(chan bool, 1)
-	firstEntry := &EntryTest{
-		position: axis.Position(500),
-		Element:  "First",
+	firstEntry := &Item{
+		Priority: axis.Position(500),
+		Value:    "First",
 	}
-	secondEntry := &EntryTest{
-		position: axis.Position(1000),
-		Element:  "Second",
+	secondEntry := &Item{
+		Priority: axis.Position(1000),
+		Value:    "Second",
 	}
 
 	// Act
@@ -52,10 +52,10 @@ func TestRunWithJobsInOrder(t *testing.T) {
 	go provider.Update(newPosition)
 
 	// Assert
-	firstElement := <-workerChan
-	expect(t, *firstEntry, firstElement, stopChan)
-	secondElement := <-workerChan
-	expect(t, *secondEntry, secondElement, stopChan)
+	firstValue := <-workerChan
+	expect(t, *firstEntry, firstValue, stopChan)
+	secondValue := <-workerChan
+	expect(t, *secondEntry, secondValue, stopChan)
 	stopChan <- true
 }
 
@@ -70,13 +70,13 @@ func TestRunWithJobsInReverseOrder(t *testing.T) {
 	pushChan := make(chan Entry, 2)
 	workerChan := make(chan Entry, 2)
 	stopChan := make(chan bool, 1)
-	firstEntry := &EntryTest{
-		position: axis.Position(1000),
-		Element:  "First",
+	firstEntry := &Item{
+		Priority: axis.Position(1000),
+		Value:    "First",
 	}
-	secondEntry := &EntryTest{
-		position: axis.Position(500),
-		Element:  "Second",
+	secondEntry := &Item{
+		Priority: axis.Position(500),
+		Value:    "Second",
 	}
 
 	// Act
@@ -87,10 +87,10 @@ func TestRunWithJobsInReverseOrder(t *testing.T) {
 	go provider.Update(newPosition)
 
 	// Assert
-	firstElement := <-workerChan
-	expect(t, *secondEntry, firstElement, stopChan)
-	secondElement := <-workerChan
-	expect(t, *firstEntry, secondElement, stopChan)
+	firstValue := <-workerChan
+	expect(t, *secondEntry, firstValue, stopChan)
+	secondValue := <-workerChan
+	expect(t, *firstEntry, secondValue, stopChan)
 	stopChan <- true
 }
 
@@ -104,9 +104,9 @@ func TestRunWithStop(t *testing.T) {
 	pushChan := make(chan Entry, 2)
 	workerChan := make(chan Entry, 2)
 	stopChan := make(chan bool, 1)
-	firstEntry := &EntryTest{
-		position: axis.Position(1000),
-		Element:  "First",
+	firstEntry := &Item{
+		Priority: axis.Position(1000),
+		Value:    "First",
 	}
 
 	// Act
@@ -148,17 +148,17 @@ func TestRunWithJobsIn2Sets(t *testing.T) {
 	pushChan := make(chan Entry, 2)
 	workerChan := make(chan Entry, 2)
 	stopChan := make(chan bool, 1)
-	firstEntry := &EntryTest{
-		position: axis.Position(500),
-		Element:  "First",
+	firstEntry := &Item{
+		Priority: axis.Position(500),
+		Value:    "First",
 	}
-	secondEntry := &EntryTest{
-		position: axis.Position(1000),
-		Element:  "Second",
+	secondEntry := &Item{
+		Priority: axis.Position(1000),
+		Value:    "Second",
 	}
-	thirdEntry := &EntryTest{
-		position: axis.Position(2000),
-		Element:  "Third",
+	thirdEntry := &Item{
+		Priority: axis.Position(2000),
+		Value:    "Third",
 	}
 
 	// Act
@@ -176,12 +176,12 @@ func TestRunWithJobsIn2Sets(t *testing.T) {
 	provider.Update(terminalPosition)
 
 	// Assert
-	firstElement := <-workerChan
-	expect(t, *firstEntry, firstElement, stopChan)
-	secondElement := <-workerChan
-	expect(t, *secondEntry, secondElement, stopChan)
-	thirdElement := <-workerChan
-	expect(t, *thirdEntry, thirdElement, stopChan)
+	firstValue := <-workerChan
+	expect(t, *firstEntry, firstValue, stopChan)
+	secondValue := <-workerChan
+	expect(t, *secondEntry, secondValue, stopChan)
+	thirdValue := <-workerChan
+	expect(t, *thirdEntry, thirdValue, stopChan)
 	stopChan <- true
 }
 
@@ -195,9 +195,9 @@ func TestRunWithJobInPast(t *testing.T) {
 	pushChan := make(chan Entry, 2)
 	workerChan := make(chan Entry, 2)
 	stopChan := make(chan bool, 1)
-	firstEntry := &EntryTest{
-		position: axis.Position(500),
-		Element:  "First",
+	firstEntry := &Item{
+		Priority: 500,
+		Value:    "First",
 	}
 
 	// Act
@@ -206,67 +206,7 @@ func TestRunWithJobInPast(t *testing.T) {
 	pushChan <- firstEntry
 
 	// Assert
-	firstElement := <-workerChan
-	expect(t, *firstEntry, firstElement, stopChan)
+	firstValue := <-workerChan
+	expect(t, *firstEntry, firstValue, stopChan)
 	stopChan <- true
-}
-
-/****************************************
-*                                       *
-*        Structs implementations        *
-*                                       *
-****************************************/
-
-type EntryTest struct {
-	position axis.Position
-	Element  interface{}
-	index    int
-}
-
-func (e EntryTest) Position() axis.Position {
-	return e.position
-}
-
-type PriorityQueue []*EntryTest
-
-func (pq *PriorityQueue) Len() int {
-	return len(*pq)
-}
-
-func (pq *PriorityQueue) Less(i, j int) bool {
-	ll := *pq
-	return ll[i].Position() < ll[j].Position()
-}
-
-func (pq *PriorityQueue) Swap(i, j int) {
-	ll := *pq
-	ll[i], ll[j] = ll[j], ll[i]
-	ll[i].index = i
-	ll[j].index = j
-}
-
-func (pq *PriorityQueue) Push(v interface{}) {
-	n := len(*pq)
-	item := v.(*EntryTest)
-	item.index = n
-	*pq = append(*pq, item)
-}
-
-func (pq *PriorityQueue) Pop() interface{} {
-	ll := *pq
-	n := len(ll)
-	item := ll[n-1]
-	item.index = -1
-	*pq = ll[0 : n-1]
-	return item
-}
-
-func (pq *PriorityQueue) Peek() interface{} {
-	ll := *pq
-	n := len(ll)
-	if n <= 0 {
-		return nil
-	}
-	item := ll[n-1]
-	return item
 }
