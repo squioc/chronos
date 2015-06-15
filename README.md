@@ -1,4 +1,4 @@
-# LibChronos
+# Chronos
 
     import "github.com/squioc/chronos"
 
