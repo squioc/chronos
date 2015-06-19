@@ -57,6 +57,6 @@ func (pq *PriorityQueue) Peek() interface{} {
 	if n <= 0 {
 		return nil
 	}
-	item := ll[n-1]
+	item := ll[0]
 	return item
 }
