@@ -1,6 +1,7 @@
 package chronos
 
 import (
+	"container/heap"
 	"fmt"
 	"github.com/squioc/axis"
 	"testing"
@@ -20,8 +21,19 @@ func expect(t *testing.T, expected Item, actual Entry, stopChan chan bool) {
 	}
 	if actual.(*Item).Value != expected.Value {
 		stopChan <- true
-		t.Fatalf("The actual element wasn't the expected one")
+		t.Fatalf("The actual element wasn't the expected one. actual=%v expected=%v", actual.(*Item), expected)
 	}
+}
+
+func waitUntil(t *testing.T, workerChan chan Entry, timeout time.Duration) Entry {
+	select {
+	case value := <-workerChan:
+		return value
+	case <-time.After(2 * time.Second):
+		// FAIL, timeout
+		t.Fatalf("Timeout. the test exceed the expected duration")
+	}
+	return nil
 }
 
 func TestRunWithJobsInOrder(t *testing.T) {
@@ -208,5 +220,41 @@ func TestRunWithJobInPast(t *testing.T) {
 	// Assert
 	firstValue := <-workerChan
 	expect(t, *firstEntry, firstValue, stopChan)
+	stopChan <- true
+}
+
+func TestRunWithANonEmptyQueue(t *testing.T) {
+	fmt.Println("Test Run with a non empty queue should pop until the next delay")
+	// Arrange
+	position := axis.Position(1000)
+	newPosition := axis.Position(2000)
+	provider := axis.NewFakeTime(position)
+	pq := new(PriorityQueue)
+	firstEntry := &Item{
+		Priority: axis.Position(1500),
+		Value:    "First",
+	}
+	secondEntry := &Item{
+		Priority: axis.Position(500),
+		Value:    "Second",
+	}
+	heap.Push(pq, secondEntry)
+	heap.Push(pq, firstEntry)
+	chronos := NewChronos(provider, pq)
+	pushChan := make(chan Entry, 2)
+	workerChan := make(chan Entry, 2)
+	stopChan := make(chan bool, 1)
+
+	// Act
+	go chronos.Run(pushChan, workerChan, stopChan)
+	// Should return the first Entry immediately
+	firstValue := waitUntil(t, workerChan, 2*time.Second)
+	// Updates the position
+	go provider.Update(newPosition)
+
+	// Assert
+	expect(t, *secondEntry, firstValue, stopChan)
+	secondValue := waitUntil(t, workerChan, 2*time.Second)
+	expect(t, *firstEntry, secondValue, stopChan)
 	stopChan <- true
 }

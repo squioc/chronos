@@ -23,6 +23,10 @@ func NewChronos(provider axis.Provider, queue Queue) *Chronos {
 // Run starts the scheduler
 func (c *Chronos) Run(pushChan, workerChan chan Entry, stopChan chan bool) {
 	loopChan := make(chan axis.Position, 1)
+
+	// pop the elapsed items if the queue is not empty
+	c.popUntilNextDelay(workerChan, loopChan)
+
 	for {
 		select {
 		case entry := <-pushChan:
