@@ -54,6 +54,8 @@ func (c *Chronos) Run(pushChan, workerChan chan Entry, stopChan chan bool) {
 			c.popUntilNextDelay(workerChan, loopChan)
 
 		case <-stopChan:
+			// Closes the internal channel loopChan
+			close(loopChan)
 			return
 
 		}
