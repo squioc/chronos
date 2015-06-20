@@ -64,9 +64,9 @@ func TestRunWithJobsInOrder(t *testing.T) {
 	go provider.Update(newPosition)
 
 	// Assert
-	firstValue := <-workerChan
+	firstValue := waitUntil(t, workerChan, 2*time.Second)
 	expect(t, *firstEntry, firstValue, stopChan)
-	secondValue := <-workerChan
+	secondValue := waitUntil(t, workerChan, 2*time.Second)
 	expect(t, *secondEntry, secondValue, stopChan)
 	stopChan <- true
 }
@@ -99,9 +99,9 @@ func TestRunWithJobsInReverseOrder(t *testing.T) {
 	go provider.Update(newPosition)
 
 	// Assert
-	firstValue := <-workerChan
+	firstValue := waitUntil(t, workerChan, 2*time.Second)
 	expect(t, *secondEntry, firstValue, stopChan)
-	secondValue := <-workerChan
+	secondValue := waitUntil(t, workerChan, 2*time.Second)
 	expect(t, *firstEntry, secondValue, stopChan)
 	stopChan <- true
 }
@@ -188,11 +188,11 @@ func TestRunWithJobsIn2Sets(t *testing.T) {
 	provider.Update(terminalPosition)
 
 	// Assert
-	firstValue := <-workerChan
+	firstValue := waitUntil(t, workerChan, 2*time.Second)
 	expect(t, *firstEntry, firstValue, stopChan)
-	secondValue := <-workerChan
+	secondValue := waitUntil(t, workerChan, 2*time.Second)
 	expect(t, *secondEntry, secondValue, stopChan)
-	thirdValue := <-workerChan
+	thirdValue := waitUntil(t, workerChan, 2*time.Second)
 	expect(t, *thirdEntry, thirdValue, stopChan)
 	stopChan <- true
 }
@@ -218,7 +218,7 @@ func TestRunWithJobInPast(t *testing.T) {
 	pushChan <- firstEntry
 
 	// Assert
-	firstValue := <-workerChan
+	firstValue := waitUntil(t, workerChan, 2*time.Second)
 	expect(t, *firstEntry, firstValue, stopChan)
 	stopChan <- true
 }
